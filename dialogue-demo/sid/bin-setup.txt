@@ -1,6 +1,0 @@
-
-bin 以下に移動し、二つのCソースをコンパイルする（要make）
-
-cd bin
-make clean
-make

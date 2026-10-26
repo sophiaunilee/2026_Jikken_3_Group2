@@ -1,0 +1,112 @@
+0	[その]	s o n o
+0	[前の]	m a e n o
+0	[一番の]	i ch i b a N n o
+0	[二番の]	n i b a N n o
+0	[三番の]	s a N b a N n o
+0	[四番の]	y o N b a N n o
+0	[五番の]	g o b a N n o
+0	[六番の]	r o k u b a N n o
+0	[七番の]	n a n a b a N n o
+0	[八番の]	h a ch i b a N n o
+0	[九番の]	ky u: b a N n o
+0	[十番の]	j u: b a N n o
+1	[それを]	s o r e o
+1	[一番を]	i ch i b a N o
+1	[二番を]	n i b a N o
+1	[三番を]	s a N b a N o
+1	[四番を]	y o N b a N o
+1	[五番を]	g o b a N o
+1	[六番を]	r o k u b a N o
+1	[七番を]	n a n a b a N o
+1	[八番を]	h a ch i b a N o
+1	[九番を]	ky u: b a N o
+1	[十番を]	j u: b a N o
+2	[内側]	u ch i g a w a
+2	[隣]	t o n a r i
+3	[くっつけて]	k u q ts u k e t e
+3	[ぴったり]	p i q t a r i
+3	[すぐ]	s u g u
+4	[真ん中]	m a N n a k a
+4	[上]	u e
+4	[下]	sh i t a
+4	[左]	h i d a r i
+4	[右]	m i g i
+4	[右上]	m i g i u e
+4	[左上]	h i d a r i u e
+4	[右下]	m i g i sh i t a
+4	[左下]	h i d a r i sh i t a
+4	[少し上]	s u k o sh i u e
+4	[少し下]	s u k o sh i sh i t a
+4	[少し左]	s u k o sh i h i d a r i
+4	[少し右]	s u k o sh i m i g i
+5	[めっちゃ]	m e q ch a
+5	[すごく]	s u g o k u
+6	[同じ]	o n a j i
+6	[半分くらいの]	h a N b u N k u r a i n o
+6	[大きい]	o: k i:
+6	[大きく]	o: k i k u
+6	[小さい]	ch i: s a i
+6	[小さく]	ch i: s a k u
+6	[普通の]	f u ts u: n o
+7	[縦]	t a t e
+7	[縦の]	t a t e n o
+7	[横]	y o k o
+7	[横の]	y o k o n o
+7	[縦長]	t a t e n a g a
+7	[縦長の]	t a t e n a g a n o
+7	[縦長に]	t a t e n a g a n i
+7	[横長]	y o k o n a g a
+7	[横長の]	y o k o n a g a n o
+7	[横長に]	y o k o n a g a n i
+8	[赤い]	a k a i
+8	[赤の]	a k a n o
+8	[赤く]	a k a k u
+8	[赤に]	a k a n i
+8	[青い]	a o i
+8	[青の]	a o n o
+8	[青く]	a o k u
+8	[青に]	a o n i
+8	[緑の]	m i d o r i n o
+8	[緑に]	m i d o r i n i
+8	[黄色い]	k i: r o i
+8	[黄色の]	k i: r o n o
+8	[黄色く]	k i: r o k u
+8	[黄色に]	k i: r o n i
+8	[ピンクの]	p i N k u n o
+8	[ピンクに]	p i N k u n i
+8	[黒い]	k u r o i
+8	[黒の]	k u r o n o
+8	[黒く]	k u r o k u
+8	[黒に]	k u r o n i
+8	[白い]	sh i r o i
+8	[白の]	sh i r o n o
+8	[白く]	sh i r o k u
+8	[白に]	sh i r o n i
+8	[黒塗りの]	k u r o n u r i n o
+8	[黒塗りに]	k u r o n u r i n i
+9	[丸]	m a r u
+9	[楕円]	d a e N
+9	[四角]	sh i k a k u
+9	[三角]	s a N k a k u
+9	[直線]	ch o k u s e N
+9	[縦線]	t a t e s e N
+9	[横線]	y o k o s e N
+9	[カーブ]	k a: b u
+9	[図形]	z u k e i
+10	[三十度]	s a N j u: d o
+10	[四十五度]	y o N j u: g o d o
+10	[九十度]	ky u: j u: d o
+10	[百八十度]	hy a k u h a ch i j u: d o
+11	[に]	n i
+12	[の]	n o
+13	[を]	o
+14	[描いて]	k a i t e
+14	[塗って]	n u q t e
+14	[塗りつぶして]	n u r i ts u b u sh i t e
+14	[引いて]	h i: t e
+15	[回転して]	k a i t e N sh i t e
+15	[動かして]	u g o k a sh i t e
+15	[して]	sh i t e
+16	[ください]	k u d a s a i
+17	[silB]	silB
+18	[silE]	silE

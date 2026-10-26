@@ -1,0 +1,79 @@
+# =============================================================
+# Julius 音声認識 文法ルール定義ファイル (test.grammar)
+#
+# 【音声認識の精度を高めるためのシンプル設計】
+# - 曖昧な分岐を減らし、Julius が迷わず高確率で正しい文を選べるように整理しています。
+# =============================================================
+
+S : NS_B SENTENCE NS_E
+
+SENTENCE : DRAW_SENTENCE
+SENTENCE : EDIT_SENTENCE
+
+# -------------------------------------------------------------
+# 1. 新しい図形を描く文 (DRAW_SENTENCE)
+#    例：「真ん中に 大きい 丸を 描いてください」
+#    例：「前の 内側の 下に 小さい 丸を 描いて」
+# -------------------------------------------------------------
+DRAW_SENTENCE : LOC_PHRASE OBJ_PHRASE ACT_PHRASE
+DRAW_SENTENCE : OBJ_PHRASE ACT_PHRASE
+
+# 位置フレーズ（通常の位置 ／ 前の図形・番号基準の位置）
+LOC_PHRASE : LOC P_NI
+LOC_PHRASE : TOUCH LOC P_NI
+LOC_PHRASE : REF LOC P_NI
+LOC_PHRASE : REF TOUCH LOC P_NI
+LOC_PHRASE : REF REL P_NI
+LOC_PHRASE : REF REL P_NO LOC P_NI
+LOC_PHRASE : REF REL P_NO TOUCH LOC P_NI
+
+# 目的語フレーズ（図形 + 「を」）
+OBJ_PHRASE : SHAPE_PHRASE P_WO
+
+# 図形フレーズ（サイズ・向き・色と図形の組み合わせ：どの順番で言っても認識可能）
+SHAPE_PHRASE : SHAPE
+SHAPE_PHRASE : SIZE_P SHAPE
+SHAPE_PHRASE : ASPECT SHAPE
+SHAPE_PHRASE : COLOR SHAPE
+SHAPE_PHRASE : SIZE_P ASPECT SHAPE
+SHAPE_PHRASE : ASPECT SIZE_P SHAPE
+SHAPE_PHRASE : SIZE_P COLOR SHAPE
+SHAPE_PHRASE : COLOR SIZE_P SHAPE
+SHAPE_PHRASE : ASPECT COLOR SHAPE
+SHAPE_PHRASE : COLOR ASPECT SHAPE
+SHAPE_PHRASE : SIZE_P ASPECT COLOR SHAPE
+SHAPE_PHRASE : ASPECT SIZE_P COLOR SHAPE
+SHAPE_PHRASE : COLOR SIZE_P ASPECT SHAPE
+SHAPE_PHRASE : COLOR ASPECT SIZE_P SHAPE
+
+# サイズ（「めっちゃ」「すごく」つきも対応）
+SIZE_P : SIZE
+SIZE_P : DEGREE SIZE
+
+# 描画の動詞フレーズ（「くっつけて描いて」なども対応）
+ACT_PHRASE : VERB
+ACT_PHRASE : VERB PLZ
+ACT_PHRASE : TOUCH VERB
+ACT_PHRASE : TOUCH VERB PLZ
+
+# -------------------------------------------------------------
+# 2. 図形を動かす・回転・変更する文 (EDIT_SENTENCE)
+#    例：「九十度 回転してください」「二番を 赤く 塗ってください」
+# -------------------------------------------------------------
+EDIT_SENTENCE : EDIT_BODY
+EDIT_SENTENCE : TARGET EDIT_BODY
+
+# 回転する
+EDIT_BODY : ANGLE EDIT_ACT
+
+# 位置を動かす
+EDIT_BODY : LOC_PHRASE EDIT_ACT
+
+# サイズ・縦横比・色を変える
+EDIT_BODY : SIZE_P EDIT_ACT
+EDIT_BODY : ASPECT EDIT_ACT
+EDIT_BODY : COLOR ACT_PHRASE
+EDIT_BODY : COLOR EDIT_ACT
+
+EDIT_ACT : EDIT_VERB
+EDIT_ACT : EDIT_VERB PLZ
