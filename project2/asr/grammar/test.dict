@@ -1,0 +1,60 @@
+0	[silB]	silB
+1	[silE]	silE
+2	[丸]	m a r u
+2	[楕円形]	d a e N k e e
+2	[四角]	sh i k a k u
+2	[三角]	s a N k a k u
+2	[線]	s e N
+3	[赤い]	a k a i
+3	[青い]	a o i
+3	[黄色い]	k i i r o i
+3	[緑の]	m i d o r i n o
+3	[黒い]	k u r o i
+3	[真っ白な]	m a q sh i r o n a
+4	[大きい]	o o k i i
+4	[大きな]	o o k i n a
+4	[小さい]	ch i i s a i
+4	[小さな]	ch i i s a n a
+4	[中くらいの]	ch u u k u r a i n o
+5	[右上]	m i g i u e
+5	[左上]	h i d a r i u e
+5	[右下]	m i g i sh i t a
+5	[左下]	h i d a r i sh i t a
+5	[真ん中]	m a N n a k a
+5	[中央]	ch u u o o
+5	[右]	m i g i
+5	[左]	h i d a r i
+5	[上]	u e
+5	[下]	sh i t a
+6	[に]	n i
+7	[を]	o
+8	[描いて]	k a i t e
+8	[書いて]	k a i t e
+9	[消して]	k e sh i t e
+9	[全部消して]	z e N b u k e sh i t e
+10	[少し]	s u k o sh i
+10	[ちょっと]	ch o q t o
+10	[もっと]	m o q t o
+11	[大きく]	o o k i k u
+11	[大きくして]	o o k i k u sh i t e
+11	[小さく]	ch i i s a k u
+11	[小さくして]	ch i i s a k u sh i t e
+12	[動かして]	u g o k a sh i t e
+12	[ずらして]	z u r a sh i t e
+13	[回転して]	k a i t e N sh i t e
+13	[回して]	m a w a sh i t e
+14	[枠だけの]	w a k u d a k e n o
+14	[塗らない]	n u r a n a i
+15	[塗って]	n u q t e
+15	[枠だけにして]	w a k u d a k e n i sh i t e
+15	[白抜きにして]	sh i r o n u k i n i sh i t e
+15	[透明にして]	t o o m e e n i sh i t e
+16	[元に戻して]	m o t o n i m o d o sh i t e
+16	[前に戻して]	m a e n i m o d o sh i t e
+17	[15度]	j u u g o d o
+17	[30度]	s a N j u u d o
+17	[45度]	y o N j u u g o d o
+17	[90度]	ky u u j u u d o
+18	[横に]	y o k o n i
+18	[縦に]	t a t e n i
+19	[伸ばして]	n o b a sh i t e

@@ -1,0 +1,44 @@
+% NS_B
+silB        silB
+% NS_E
+silE        silE
+% COLOR
+RED         a k a i
+BLUE        a o i
+YELLOW      k i i r o i
+GREEN       m i d o r i n o
+BLACK       k u r o i
+ORANGE      o r e N j i n o
+% SIZE
+LARGE       o o k i i
+LARGE       o o k i n a
+SMALL       ch i i s a i
+SMALL       ch i i s a n a
+MEDIUM      ch u u k u r a i n o
+% SHAPE
+CIRCLE      m a r u
+CIRCLE      e N
+SQUARE      sh i k a k u
+TRIANGLE    s a N k a k u
+STAR        h o sh i
+LINE        s e N
+% POS
+TOP_RIGHT      m i g i u e
+TOP_LEFT       h i d a r i u e
+BOTTOM_RIGHT   m i g i sh i t a
+BOTTOM_LEFT    h i d a r i sh i t a
+CENTER         m a N n a k a
+CENTER         ch u u o o
+RIGHT          m i g i
+LEFT           h i d a r i
+TOP            u e
+BOTTOM         sh i t a
+% WO
+WO          o
+% NI
+NI          n i
+% DRAW
+DRAW        k a i t e
+% CLEAR
+CLEAR       k e sh i t e
+CLEAR       z e N b u k e sh i t e
