@@ -363,14 +363,29 @@ def process_voice_text(text: str, history: list):
                 target_cmd["x"], target_cmd["y"] = round(nx, 3), round(ny, 3)
             modified = True
 
-        # ③ サイズ変更命令（「めっちゃ大きくして」「小さくして」など）
+        # ③ サイズ変更命令（「めっちゃ大きくして」「小さくして」「半分にして」「半分くらいにして」など）
+        #    「くらい／ぐらい（APPROX）」がある場合は、固定値ではなく前後の範囲からランダムに選ぶ！
         is_extreme = any(w in text for w in ["めっちゃ", "すごく", "とても", "かなり", "超"])
-        if "大き" in text:
-            scale = 1.75 if is_extreme else 1.35
+        is_approx = ("くらい" in text) or ("ぐらい" in text)
+        if "半分" in text:
+            factor = random.uniform(0.40, 0.60) if is_approx else 0.50
+            target_cmd["size_ratio"] = max(0.04, round(target_cmd.get("size_ratio", 0.25) * factor, 3))
+            modified = True
+        elif "普通" in text:
+            target_cmd["size_ratio"] = round(random.uniform(0.20, 0.30), 3) if is_approx else 0.25
+            modified = True
+        elif "大き" in text:
+            if is_extreme:
+                scale = random.uniform(1.55, 1.95) if is_approx else 1.75
+            else:
+                scale = random.uniform(1.20, 1.50) if is_approx else 1.35
             target_cmd["size_ratio"] = min(0.85, round(target_cmd.get("size_ratio", 0.25) * scale, 3))
             modified = True
         elif "小さ" in text:
-            scale = 0.45 if is_extreme else 0.70
+            if is_extreme:
+                scale = random.uniform(0.35, 0.55) if is_approx else 0.45
+            else:
+                scale = random.uniform(0.60, 0.80) if is_approx else 0.70
             target_cmd["size_ratio"] = max(0.04, round(target_cmd.get("size_ratio", 0.25) * scale, 3))
             modified = True
 
@@ -421,36 +436,40 @@ def process_voice_text(text: str, history: list):
     is_inside = ("内側" in text_clean_for_ref) or ("中" in text_clean_for_ref)
 
     # (2) サイズ（size_ratio）を決定する
-    #     「めっちゃ」「すごく」「とても」「かなり」「超」がある場合は極端なサイズにする
+    #     - 「めっちゃ」「すごく」がある場合は極端なサイズにする
+    #     - 「くらい／ぐらい（APPROX）」がある場合は、固定値ではなく一定範囲のランダムな数値にする！
     is_extreme = any(w in text for w in ["めっちゃ", "すごく", "とても", "かなり", "超"])
+    is_approx = ("くらい" in text) or ("ぐらい" in text)
     prev_size = ref_shape.get("size_ratio", 0.25) if ref_shape else 0.25
 
     if is_same:
-        size_ratio = prev_size
-    elif "より少し小さ" in text:
-        size_ratio = round(prev_size * random.uniform(0.70, 0.85), 3)
-    elif "より少し大き" in text:
-        size_ratio = min(0.75, round(prev_size * random.uniform(1.15, 1.30), 3))
-    elif "半分くらい" in text:
-        size_ratio = round(prev_size * 0.50, 3)
+        # 「同じ」はぴったり 1.0倍、「同じくらいの」は 0.85〜1.15倍のランダム
+        size_ratio = round(prev_size * random.uniform(0.85, 1.15), 3) if is_approx else prev_size
+    elif "半分" in text:
+        # 「半分の」はきっちり 0.50倍、「半分くらいの」は 0.40〜0.60倍のランダム
+        factor = random.uniform(0.40, 0.60) if is_approx else 0.50
+        size_ratio = round(prev_size * factor, 3)
+    elif "普通" in text:
+        # 「普通の」はきっちり 0.25、「普通くらいの」は 0.20〜0.30 のランダム
+        size_ratio = round(random.uniform(0.20, 0.30), 3) if is_approx else 0.25
     elif "大き" in text:
         if is_extreme:
-            size_ratio = round(random.uniform(0.55, 0.72), 3)
+            size_ratio = round(random.uniform(0.55, 0.72), 3) if is_approx else 0.62
         else:
-            size_ratio = round(random.uniform(0.34, 0.46), 3)
+            size_ratio = round(random.uniform(0.34, 0.46), 3) if is_approx else 0.40
     elif "小さ" in text:
         if is_extreme:
-            size_ratio = round(random.uniform(0.04, 0.07), 3)
+            size_ratio = round(random.uniform(0.04, 0.07), 3) if is_approx else 0.055
         elif ref_shape and is_inside:
             max_small = max(0.08, prev_size * 0.42)
-            size_ratio = round(random.uniform(max_small * 0.75, max_small), 3)
+            size_ratio = round(random.uniform(max_small * 0.75, max_small), 3) if is_approx else round(max_small * 0.88, 3)
         else:
-            size_ratio = round(random.uniform(0.10, 0.16), 3)
+            size_ratio = round(random.uniform(0.10, 0.16), 3) if is_approx else 0.13
     else:
         if ref_shape and is_inside:
             size_ratio = round(prev_size * 0.55, 3)
         else:
-            size_ratio = round(random.uniform(0.20, 0.28), 3)
+            size_ratio = 0.25
 
     # (3) 色と塗りつぶし（filled）を決定する
     color, has_color = extract_color(text)
@@ -565,19 +584,20 @@ def get_asr_result():
 # 5. test.yomi から全単語リストを読み取って単語帳データを返す関数
 # ==============================================================================
 CATEGORY_LABELS = {
-    "REF": "指示語・番号参照（その・一番の・二番の）",
-    "TARGET": "操作対象の番号指定（一番を・二番を）",
-    "REL": "相対位置（中・隣など）",
-    "TOUCH": "接点・密着（ぴったりくっつける）",
+    "REF_PRON": "指示語（その）",
+    "TARGET_NOUN": "対象・番号の名詞（それ・前・一番〜十番）",
+    "REL": "相対位置（内側・隣）",
+    "TOUCH": "接点・密着（くっつけて・ぴったり・すぐ）",
     "LOC": "位置・方向",
     "DEGREE": "強調・程度（めっちゃ・すごく）",
-    "SIZE": "サイズ・大きさ比較",
-    "ASPECT": "縦長・横長・太さ",
+    "APPROX": "ぼかし表現（くらい・ぐらい）",
+    "SIZE": "サイズ・大きさ比較（同じ・半分・普通・大きい・小さい）",
+    "ASPECT": "縦横の向き・比率（縦・横・縦長・横長）",
     "COLOR": "色・塗り方",
     "SHAPE": "図形・対象",
-    "ANGLE": "回転の角度・方向",
-    "P_NI": "助詞（に・へ）",
+    "ANGLE": "回転の角度",
     "P_NO": "助詞（の）",
+    "P_NI": "助詞（に）",
     "P_WO": "助詞（を）",
     "VERB": "描画の動詞",
     "EDIT_VERB": "移動・回転・変更の動詞",

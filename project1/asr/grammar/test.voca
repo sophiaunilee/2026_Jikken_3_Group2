@@ -1,28 +1,18 @@
-% REF
+% REF_PRON
 その	s o n o
-前の	m a e n o
-一番の	i ch i b a N n o
-二番の	n i b a N n o
-三番の	s a N b a N n o
-四番の	y o N b a N n o
-五番の	g o b a N n o
-六番の	r o k u b a N n o
-七番の	n a n a b a N n o
-八番の	h a ch i b a N n o
-九番の	ky u: b a N n o
-十番の	j u: b a N n o
-% TARGET
-それを	s o r e o
-一番を	i ch i b a N o
-二番を	n i b a N o
-三番を	s a N b a N o
-四番を	y o N b a N o
-五番を	g o b a N o
-六番を	r o k u b a N o
-七番を	n a n a b a N o
-八番を	h a ch i b a N o
-九番を	ky u: b a N o
-十番を	j u: b a N o
+% TARGET_NOUN
+それ	s o r e
+前	m a e
+一番	i ch i b a N
+二番	n i b a N
+三番	s a N b a N
+四番	y o N b a N
+五番	g o b a N
+六番	r o k u b a N
+七番	n a n a b a N
+八番	h a ch i b a N
+九番	ky u: b a N
+十番	j u: b a N
 % REL
 内側	u ch i g a w a
 隣	t o n a r i
@@ -47,52 +37,41 @@
 % DEGREE
 めっちゃ	m e q ch a
 すごく	s u g o k u
+% APPROX
+くらい	k u r a i
+ぐらい	g u r a i
 % SIZE
 同じ	o n a j i
-半分くらいの	h a N b u N k u r a i n o
+半分	h a N b u N
+普通	f u ts u:
 大きい	o: k i:
 大きく	o: k i k u
 小さい	ch i: s a i
 小さく	ch i: s a k u
-普通の	f u ts u: n o
 % ASPECT
 縦	t a t e
-縦の	t a t e n o
 横	y o k o
-横の	y o k o n o
 縦長	t a t e n a g a
-縦長の	t a t e n a g a n o
-縦長に	t a t e n a g a n i
 横長	y o k o n a g a
-横長の	y o k o n a g a n o
-横長に	y o k o n a g a n i
 % COLOR
+赤	a k a
 赤い	a k a i
-赤の	a k a n o
 赤く	a k a k u
-赤に	a k a n i
+青	a o
 青い	a o i
-青の	a o n o
 青く	a o k u
-青に	a o n i
-緑の	m i d o r i n o
-緑に	m i d o r i n i
+緑	m i d o r i
+黄色	k i: r o
 黄色い	k i: r o i
-黄色の	k i: r o n o
 黄色く	k i: r o k u
-黄色に	k i: r o n i
-ピンクの	p i N k u n o
-ピンクに	p i N k u n i
+ピンク	p i N k u
+黒	k u r o
 黒い	k u r o i
-黒の	k u r o n o
 黒く	k u r o k u
-黒に	k u r o n i
+白	sh i r o
 白い	sh i r o i
-白の	sh i r o n o
 白く	sh i r o k u
-白に	sh i r o n i
-黒塗りの	k u r o n u r i n o
-黒塗りに	k u r o n u r i n i
+黒塗り	k u r o n u r i
 % SHAPE
 丸	m a r u
 楕円	d a e N
@@ -108,10 +87,10 @@
 四十五度	y o N j u: g o d o
 九十度	ky u: j u: d o
 百八十度	hy a k u h a ch i j u: d o
-% P_NI
-に	n i
 % P_NO
 の	n o
+% P_NI
+に	n i
 % P_WO
 を	o
 % VERB
