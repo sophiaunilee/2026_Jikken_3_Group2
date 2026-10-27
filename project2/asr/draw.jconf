@@ -1,0 +1,15 @@
+# お絵描きアプリ用のjconf（授業の grammer.jconf をもとに、文法だけ draw に替えたもの）
+# 置き場所: asr/draw.jconf （model や grammar は、このjconfのあるフォルダからの相対パス）
+
+# 音響モデル（授業で配布されたモノフォンHMM）と、そのHMMのリスト
+-h model/binhmm-jnas-mono-mix16
+-hlist mono.lst
+
+# 録音済みの音声ファイルを読む（ファイル一覧は、スクリプトから -filelist で渡す）
+-input file
+
+# 音声区間検出の閾値（小さいほど敏感）
+-lv 1000
+
+# 認識する文法：asr/grammar/draw.dfa と asr/grammar/draw.dict
+-gram grammar/test

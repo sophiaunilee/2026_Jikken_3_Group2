@@ -1,0 +1,19 @@
+# Julius 設定ファイル（モジュールモード）
+# 起動: julius -C julius.jconf
+# ※ -h の音響モデルのパスは、自分の環境（ディクテーションキット等）に合わせて書き換える
+
+# --- 文法（mkdfa.pl draw で作った draw.dfa / draw.dict を読む） ---
+-gram grammar/test
+
+# --- 音響モデル（モノフォンの例。トライフォンなら -hlist も指定する） ---
+-h model/binhmm-jnas-mono-mix16
+
+# --- 入力 ---
+-input mic
+-smpFreq 16000
+
+# --- モジュールモード（TCPで認識結果を送る。待ち受けポート10500） ---
+-module 10500
+
+# --- 出力に含める情報（W:単語 L:言語モデル内部ID P:音素 S:スコア C:信頼度） ---
+-outcode WLPSC

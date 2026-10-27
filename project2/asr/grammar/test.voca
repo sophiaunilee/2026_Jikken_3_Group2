@@ -1,0 +1,80 @@
+% NS_B
+silB	silB
+% NS_E
+silE	silE
+% SHAPE
+丸	m a r u
+楕円形	d a e N k e e
+四角	sh i k a k u
+三角	s a N k a k u
+線	s e N
+% COLOR
+赤い	a k a i
+青い	a o i
+黄色い	k i i r o i
+緑の	m i d o r i n o
+黒い	k u r o i
+真っ白な	m a q sh i r o n a
+% SIZE
+大きい	o o k i i
+大きな	o o k i n a
+小さい	ch i i s a i
+小さな	ch i i s a n a
+中くらいの	ch u u k u r a i n o
+% LOC
+右上	m i g i u e
+左上	h i d a r i u e
+右下	m i g i sh i t a
+左下	h i d a r i sh i t a
+真ん中	m a N n a k a
+中央	ch u u o o
+右	m i g i
+左	h i d a r i
+上	u e
+下	sh i t a
+% WHERE
+に	n i
+% BE
+を	o
+% DRAW
+描いて	k a i t e
+書いて	k a i t e
+% CLEAR
+消して	k e sh i t e
+全部消して	z e N b u k e sh i t e
+% AMT
+少し	s u k o sh i
+ちょっと	ch o q t o
+もっと	m o q t o
+% SCALE
+大きく	o o k i k u
+大きくして	o o k i k u sh i t e
+小さく	ch i i s a k u
+小さくして	ch i i s a k u sh i t e
+% MOVE
+動かして	u g o k a sh i t e
+ずらして	z u r a sh i t e
+% ROT
+回転して	k a i t e N sh i t e
+回して	m a w a sh i t e
+% FILL
+枠だけの	w a k u d a k e n o
+塗らない	n u r a n a i
+% PAINT
+塗って	n u q t e
+枠だけにして	w a k u d a k e n i sh i t e
+白抜きにして	sh i r o n u k i n i sh i t e
+透明にして	t o o m e e n i sh i t e
+% UNDO
+元に戻して	m o t o n i m o d o sh i t e
+前に戻して	m a e n i m o d o sh i t e
+% ANGLE
+15度	j u u g o d o
+30度	s a N j u u d o
+45度	y o N j u u g o d o
+90度	ky u u j u u d o
+% AXIS
+横に	y o k o n i
+縦に	t a t e n i
+% STRETCH
+伸ばして	n o b a sh i t e
