@@ -10,6 +10,7 @@
 
 // これまでに描かれたすべての図形を保持する配列
 let drawnShapes = [];
+let lastHistorySignature = "";
 let mainCanvas;
 
 // スペースキー長押し録音の状態管理フラグ
@@ -153,6 +154,13 @@ function renderCommandHistoryList() {
 
   if (!listEl) return;
 
+  // 前回とコマンド履歴の内容が同じなら、再描画＆自動スクロールをしない（スクロール位置を維持！）
+  const currentSignature = JSON.stringify(drawnShapes || []);
+  if (currentSignature === lastHistorySignature) {
+    return;
+  }
+  lastHistorySignature = currentSignature;
+
   if (!drawnShapes || drawnShapes.length === 0) {
     listEl.innerHTML = `
       <div class="history-empty">
@@ -181,7 +189,7 @@ function renderCommandHistoryList() {
     })
     .join("");
 
-  // 最新項目が見えるように一番下へスクロール
+  // 新しいコマンドが追加・変更されたときだけ一番下へスクロール
   listEl.scrollTop = listEl.scrollHeight;
 }
 
