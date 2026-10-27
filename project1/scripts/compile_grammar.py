@@ -75,16 +75,18 @@ def yomi_to_phonemes(yomi: str) -> str:
             i += 1
 
     # 長音（おう->o:, えい->e:, おお->o: など）の処理
+    # ※ ただし「おおきい(o: k i i)」「ちいさい(ch i: s a i)」などの語末の「い」は「i」のままにする
     flat = " ".join(tokens).split()
     merged = []
-    for p in flat:
+    for idx, p in enumerate(flat):
+        is_last = (idx == len(flat) - 1)
         if merged and merged[-1].endswith("o") and p in ("u", "o"):
             merged[-1] = merged[-1] + ":"
         elif merged and merged[-1].endswith("u") and p == "u":
             merged[-1] = merged[-1] + ":"
         elif merged and merged[-1].endswith("a") and p == "a":
             merged[-1] = merged[-1] + ":"
-        elif merged and merged[-1].endswith("i") and p == "i":
+        elif merged and merged[-1].endswith("i") and p == "i" and not is_last:
             merged[-1] = merged[-1] + ":"
         elif merged and merged[-1].endswith("e") and p == "e":
             merged[-1] = merged[-1] + ":"
