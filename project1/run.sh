@@ -21,20 +21,18 @@ echo "=========================================="
 echo " 🚀 仮想環境(venv)の確認および準備中..."
 echo "=========================================="
 
-if [ ! -d "venv" ]; then
+# フォルダを移動しても壊れないよう、venv/bin/python3 を直接使って確認する
+if [ ! -x "venv/bin/python3" ]; then
     echo "📦 仮想環境(venv)を作成します..."
+    rm -rf venv
     python3 -m venv venv
 fi
 
-source venv/bin/activate
-
-echo ""
-echo "=========================================="
-echo " 📦 依存パッケージの確認中..."
-echo "=========================================="
-
-pip install --quiet --upgrade pip
-pip install --quiet fastapi uvicorn pydantic
+# 念のため fastapi と uvicorn が入っているかチェックし、なければインストール
+if ! ./venv/bin/python3 -c "import fastapi, uvicorn, pydantic" 2>/dev/null; then
+    echo "📦 依存パッケージをインストール中..."
+    ./venv/bin/python3 -m pip install --quiet fastapi uvicorn pydantic
+fi
 
 echo ""
 echo "=========================================="
@@ -44,4 +42,4 @@ echo "=========================================="
 
 (sleep 1 && open "http://localhost:8000") &
 
-python3 -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
+./venv/bin/python3 -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
