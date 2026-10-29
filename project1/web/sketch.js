@@ -19,6 +19,9 @@ let isHoldRecording = false;
 // キャンバスが公開（完成）されているかどうかのフラグ（初期状態は隠れている）
 let isCanvasRevealed = false;
 
+// 録音変数の未設定の確認、修正
+let recordStartPromise = null;
+
 // 色の名前とカラーコードの対応表
 const COLOR_MAP = {
   black: "#1e293b",
