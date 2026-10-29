@@ -16,4 +16,20 @@ Mac/ubuntuの実行
 ./run.sh
 ```
 
-Windowsではrun.batファイルを実行すれば立ち上げます。
+## Windows
+実行の前、Python 3.10以上のバージョンやgit、SoXのインストールが必要になります。
+
+### Pythonのインストール
+まずPython install managerをダウンロードしてください。
+次、Command Promptに以下のコードを実行してください。
+```
+py install 3.13
+```
+
+### SoXのインストール
+Command Promptに以下のコードを実行してください。
+```
+winget install --id ChrisBagwell.SoX -e
+```
+
+インストールが終わったら、run.batを実行してください。
