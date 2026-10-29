@@ -287,7 +287,7 @@ async function startHoldRecording() {
   }
 
   try {
-    await fetch("http://localhost:8000/api/record/start", { method: "POST" });
+    await fetch("/api/record/start", { method: "POST" });
   } catch (error) {
     console.error("録音開始エラー:", error);
   }
@@ -309,7 +309,7 @@ async function stopHoldRecording() {
   }
 
   try {
-    let response = await fetch("http://localhost:8000/api/record/stop", { method: "POST" });
+    let response = await fetch("/api/record/stop", { method: "POST" });
     let data = await response.json();
     updateStatusAfterRecognition(data);
   } catch (error) {
@@ -333,7 +333,7 @@ async function openVocabModal() {
   body.innerHTML = "読み込み中...";
 
   try {
-    let res = await fetch("http://localhost:8000/api/vocabulary");
+    let res = await fetch("/api/vocabulary");
     let data = await res.json();
     let sections = data.sections || [];
 
@@ -367,7 +367,7 @@ function closeVocabModal() {
 // ==============================================================================
 async function fetchCommand() {
   try {
-    let response = await fetch("http://localhost:8000/api/command");
+    let response = await fetch("/api/command");
     if (response.ok) {
       let data = await response.json();
       if (Array.isArray(data.commands)) {
@@ -399,7 +399,7 @@ function updateStatusAfterRecognition(data) {
 
 async function undoLastShape() {
   let statusDiv = document.getElementById("status");
-  let response = await fetch("http://localhost:8000/api/undo", { method: "POST" });
+  let response = await fetch("/api/undo", { method: "POST" });
   if (response.ok) {
     let data = await response.json();
     drawnShapes = data.commands || [];
@@ -411,7 +411,7 @@ async function undoLastShape() {
 
 async function resetCanvas() {
   let statusDiv = document.getElementById("status");
-  let response = await fetch("http://localhost:8000/api/reset", { method: "POST" });
+  let response = await fetch("/api/reset", { method: "POST" });
   if (response.ok) {
     drawnShapes = [];
     renderCommandHistoryList();

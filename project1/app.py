@@ -10,6 +10,7 @@
 
 import copy
 import os
+import platform
 import random
 import signal
 import shutil
@@ -532,12 +533,59 @@ def process_voice_text(text: str, history: list):
 
 
 # ==============================================================================
-# 4. 録音＆Julius音声認識の制御関数（スペースキー長押し録音 ＆ 自動停止録音）
+# 4. 録音＆Julius音声認識の制御関数（Mac / Ubuntu / Windows マルチOS対応）
 # ==============================================================================
+def build_record_command(wav48_path: str) -> list:
+    """
+    OS（Mac / Ubuntu / Windows）に合わせて最適なマイク録音コマンドを自動で選択する。
+    - Ubuntu (Linux): PulseAudio / PipeWire / ALSA の arecord または rec / sox -d を自動選択
+    - macOS: rec または sox -d
+    - Windows: sox -d -t waveaudio default
+    """
+    sys_name = platform.system()
+
+    # 1. Windows の場合
+    if sys_name == "Windows":
+        return ["sox", "-q", "-t", "waveaudio", "default", "-r", "48000", "-c", "1", "-b", "16", wav48_path]
+
+    # 2. Ubuntu / Linux の場合（arecord が最も環境依存が少なく確実に動作する）
+    if sys_name == "Linux":
+        if shutil.which("arecord"):
+            return ["arecord", "-q", "-f", "S16_LE", "-r", "48000", "-c", "1", wav48_path]
+        if shutil.which("rec"):
+            return ["rec", "-q", "-r", "48000", "-c", "1", "-b", "16", wav48_path]
+        return ["sox", "-q", "-d", "-r", "48000", "-c", "1", "-b", "16", wav48_path]
+
+    # 3. macOS の場合
+    if shutil.which("rec"):
+        return ["rec", "-q", "-r", "48000", "-c", "1", "-b", "16", wav48_path]
+    return ["sox", "-q", "-d", "-r", "48000", "-c", "1", "-b", "16", wav48_path]
+
+
+def stop_record_process(proc: subprocess.Popen):
+    """OSごとに適切なシグナルで録音プロセスを安全に停止し、WAVヘッダを保存させる"""
+    if proc.poll() is not None:
+        return
+
+    try:
+        if platform.system() == "Windows":
+            proc.terminate()
+        else:
+            proc.send_signal(signal.SIGINT)
+        proc.wait(timeout=2.0)
+    except subprocess.TimeoutExpired:
+        proc.terminate()
+        try:
+            proc.wait(timeout=1.0)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+
+
 def run_julius_on_wav(wav48_path: str, tmpdir: str) -> Optional[str]:
     """録音された 48kHz の wav を音量正規化（gain -n -3）＆ 16kHz 変換して Julius で認識する"""
     wav16_path = os.path.join(tmpdir, "input.wav")
     list_path = os.path.join(tmpdir, "list.txt")
+    jconf_path = os.path.join("asr", "grammar.jconf")
 
     # 録音前後に 0.25秒 の無音パッドを入れ、gain -n -3 でマイク音量を最適化する
     subprocess.run(
@@ -549,10 +597,12 @@ def run_julius_on_wav(wav48_path: str, tmpdir: str) -> Optional[str]:
         f.write(wav16_path + "\n")
 
     j_res = subprocess.run(
-        ["julius", "-C", "asr/grammar.jconf", "-filelist", list_path],
+        ["julius", "-C", jconf_path, "-filelist", list_path],
         cwd=BASE_DIR,
         capture_output=True,
-        text=True
+        text=True,
+        encoding="utf-8",
+        errors="replace"
     )
 
     # sentence1: の行から認識結果を取り出す
@@ -662,7 +712,7 @@ def get_vocabulary():
 
 @app.post("/api/record/start")
 def start_recording():
-    """スペースキーを押した瞬間にマイク録音を開始する"""
+    """スペースキーを押した瞬間にマイク録音を開始する（Mac / Ubuntu / Windows 対応）"""
     global active_rec_proc, active_rec_tmpdir
 
     # すでに録音中ならそのまま返す
@@ -671,10 +721,11 @@ def start_recording():
 
     active_rec_tmpdir = tempfile.mkdtemp()
     wav48_path = os.path.join(active_rec_tmpdir, "input48.wav")
+    rec_cmd = build_record_command(wav48_path)
 
-    print("🎙️ [Push-to-Talk] 録音開始 (スペースキー押下中)...")
+    print(f"🎙️ [Push-to-Talk] 録音開始 ({' '.join(rec_cmd[:2])})...")
     active_rec_proc = subprocess.Popen(
-        ["rec", "-q", "-r", "48000", "-c", "1", "-b", "16", wav48_path],
+        rec_cmd,
         cwd=BASE_DIR
     )
     return {"status": "started"}
@@ -694,14 +745,8 @@ def stop_recording():
     active_rec_tmpdir = None
 
     try:
-        # SoX (rec) に SIGINT を送って WAV ヘッダを正常に書き込んで終了させる
-        if proc.poll() is None:
-            proc.send_signal(signal.SIGINT)
-            try:
-                proc.wait(timeout=2.0)
-            except subprocess.TimeoutExpired:
-                proc.terminate()
-                proc.wait(timeout=1.0)
+        # OSに合わせて録音プロセスを正常終了させ、WAVヘッダを書き込ませる
+        stop_record_process(proc)
 
         print("⏹️ [Push-to-Talk] 録音停止 → Julius で認識中...")
         wav48_path = os.path.join(tmpdir, "input48.wav")
