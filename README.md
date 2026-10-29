@@ -32,4 +32,4 @@ Command Promptに以下のコードを実行してください。
 winget install --id ChrisBagwell.SoX -e
 ```
 
-インストールが終わったら、run.batを実行してください。
+インストールが終わったら、run.batを管理者モードで実行してください。
