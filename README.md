@@ -16,4 +16,4 @@ Mac/ubuntuの実行
 ./run.sh
 ```
 
-Windowsではrun.badファイルを実行すれば立ち上げます。
+Windowsではrun.batファイルを実行すれば立ち上げます。
