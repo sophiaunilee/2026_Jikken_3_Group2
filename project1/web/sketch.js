@@ -1,28 +1,14 @@
-// ==============================================================================
-// p5.js ブラインド音声ドローイングゲーム スクリプト (sketch.js)
-//
-// 【このファイルの役割】
-// 1. 画面いっぱいの正方形キャンバスを作成します（完成ボタンを押すまで黒いカバーで隠します）。
-// 2. 入力されたすべてのコマンドに「1., 2., 3...」と番号を付けて右側のリストに表示します。
-// 3. スペースキーを押している間だけ録音（Push-to-Talk）し、離すと音声認識を実行します。
-// 4. 「完成！絵を見る」ボタンでカバーを外して完成した絵をジャジャーンと表示します。
-// ==============================================================================
 
-// これまでに描かれたすべての図形を保持する配列
 let drawnShapes = [];
 let lastHistorySignature = "";
 let mainCanvas;
 
-// スペースキー長押し録音の状態管理フラグ
 let isHoldRecording = false;
 
-// キャンバスが公開（完成）されているかどうかのフラグ（初期状態は隠れている）
 let isCanvasRevealed = false;
 
-// 録音変数の未設定の確認、修正
 let recordStartPromise = null;
 
-// 色の名前とカラーコードの対応表
 const COLOR_MAP = {
   black: "#1e293b",
   red: "#ef4444",
@@ -33,7 +19,6 @@ const COLOR_MAP = {
   white: "#ffffff"
 };
 
-// 画面サイズに合わせて正方形キャンバスの1辺の長さを計算する関数
 function getCanvasSize() {
   const stage = document.getElementById("canvas-stage");
   if (stage) {
@@ -43,29 +28,24 @@ function getCanvasSize() {
   return max(300, min(windowWidth - 440, windowHeight - 120));
 }
 
-// 初期化処理（ページを開いたときに1回だけ実行される）
 function setup() {
   let s = getCanvasSize();
   mainCanvas = createCanvas(s, s);
   mainCanvas.parent("canvas-holder");
 
-  // サーバーから現在の図形リストを取得し、1秒ごとに更新を確認する
   fetchCommand();
   setInterval(fetchCommand, 1000);
 
-  // キーボードのスペースキー長押しイベントを登録
   setupSpaceKeyPushToTalk();
 }
 
-// ブラウザのウィンドウサイズが変わったときにキャンバスもリサイズする
 function windowResized() {
   let s = getCanvasSize();
   resizeCanvas(s, s);
 }
 
-// 毎フレーム実行される描画関数
 function draw() {
-  background(255); // 背景を白でクリア
+  background(255); 
 
   if (!drawnShapes || drawnShapes.length === 0) {
     return;
@@ -76,13 +56,11 @@ function draw() {
   }
 }
 
-// 1つの図形データをキャンバスに描く関数
 function drawSingleShape(cmd) {
   if (!cmd || !cmd.shape) return;
 
   push();
 
-  // 1. 中心座標 (x, y) に移動し、回転角度 (rotation) を適用する
   let x = (cmd.x !== undefined ? cmd.x : 0.5) * width;
   let y = (cmd.y !== undefined ? cmd.y : 0.5) * height;
   translate(x, y);
@@ -91,7 +69,6 @@ function drawSingleShape(cmd) {
     rotate(radians(cmd.rotation));
   }
 
-  // 2. 色と塗りつぶし（filled）を設定する
   let colorCode = COLOR_MAP[cmd.color] || "#1e293b";
   stroke("#1e293b");
   strokeWeight(3);
@@ -102,8 +79,6 @@ function drawSingleShape(cmd) {
     noFill();
   }
 
-  // 3. サイズと縦横比（縦長・横長・通常）を計算して原点 (0, 0) を中心に図形を描画する
-  //    縦長・横長がひと目で分かるように 0.65 : 1.35（約 1 : 2）の比率にする
   let size = width * (cmd.size_ratio || 0.25);
   let w = size;
   let h = size;
@@ -134,7 +109,6 @@ function drawSingleShape(cmd) {
       line(-size / 2, 0, size / 2, 0);
     }
   } else if (cmd.shape === "curve") {
-    // 曲線（下に凸の弧）：上端が -h*0.15、下端(底)が +h*0.15 になり中心(0,0)に対して上下対称にする
     noFill();
     arc(0, -h * 0.15, w, h * 0.6, 0, PI);
   }
@@ -142,10 +116,6 @@ function drawSingleShape(cmd) {
   pop();
 }
 
-// ==============================================================================
-// 番号付きコマンド履歴リスト (1., 2., 3...) の表示更新
-// （新規描画も編集もすべて独立した1つのステップとして順番に表示する）
-// ==============================================================================
 function renderCommandHistoryList() {
   const listEl = document.getElementById("commandHistoryList");
   const counterEl = document.getElementById("blindCounter");
@@ -157,7 +127,6 @@ function renderCommandHistoryList() {
 
   if (!listEl) return;
 
-  // 前回とコマンド履歴の内容が同じなら、再描画＆自動スクロールをしない（スクロール位置を維持！）
   const currentSignature = JSON.stringify(drawnShapes || []);
   if (currentSignature === lastHistorySignature) {
     return;
@@ -192,13 +161,9 @@ function renderCommandHistoryList() {
     })
     .join("");
 
-  // 新しいコマンドが追加・変更されたときだけ一番下へスクロール
   listEl.scrollTop = listEl.scrollHeight;
 }
 
-// ==============================================================================
-// 「完成！絵を見る」ブラインドカバーの開閉処理
-// ==============================================================================
 function revealCanvas() {
   isCanvasRevealed = true;
   updateBlindCoverUI();
@@ -236,31 +201,22 @@ function updateBlindCoverUI() {
   }
 }
 
-// ==============================================================================
-// スペースキーを押している間だけ録音する (Push-to-Talk) ＆ キーボードショートカット処理
-// - Space 長押し: 録音
-// - Backspace: 1つ戻す (Undo)
-// - Escape: 単語帳を閉じる
-// ==============================================================================
 function setupSpaceKeyPushToTalk() {
   window.addEventListener("keydown", (e) => {
     const modal = document.getElementById("vocabModal");
     const isModalOpen = modal && modal.classList.contains("open");
 
-    // 1. Esc キー：単語帳を閉じる
     if (e.code === "Escape") {
       closeVocabModal();
       return;
     }
 
-    // 2. Backspace キー：1つ戻す(Undo)
     if (!isModalOpen && !e.repeat && e.code === "Backspace") {
       e.preventDefault();
       undoLastShape();
       return;
     }
 
-    // 3. Space キー長押し：録音開始
     if (e.code === "Space" && !e.repeat && !isModalOpen) {
       e.preventDefault();
       startHoldRecording();
@@ -324,9 +280,6 @@ async function stopHoldRecording() {
   }
 }
 
-// ==============================================================================
-// 全単語帳モーダル（ポップアップ）の表示・非表示処理
-// ==============================================================================
 async function openVocabModal() {
   const modal = document.getElementById("vocabModal");
   const body = document.getElementById("vocabModalBody");
@@ -365,9 +318,6 @@ function closeVocabModal() {
   }
 }
 
-// ==============================================================================
-// バックエンドとの通信・ボタン操作処理
-// ==============================================================================
 async function fetchCommand() {
   try {
     let response = await fetch("/api/command");
@@ -418,7 +368,7 @@ async function resetCanvas() {
   if (response.ok) {
     drawnShapes = [];
     renderCommandHistoryList();
-    hideCanvas(); // リセットしたら再びキャンバスを黒いカバーで隠す
+    hideCanvas(); 
     statusDiv.style.color = "#cbd5e1";
     statusDiv.innerText = "🗑️ リセットしました！またキャンバスを隠して新しいゲームを始めます。";
   }

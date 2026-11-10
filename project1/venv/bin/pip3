@@ -1,0 +1,8 @@
+#!/home/denjo/Downloads/2026_Jikken_3_Group2-main_comments_removed/2026_Jikken_3_Group2-main/project1/venv/bin/python3
+# -*- coding: utf-8 -*-
+import re
+import sys
+from pip._internal.cli.main import cli
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    sys.exit(cli())

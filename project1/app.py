@@ -1,12 +1,3 @@
-# ==============================================================================
-# 音声認識ドローイング バックエンドサーバー (app.py)
-#
-# 【このファイルの役割】
-# 1. ブラウザに Web 画面 (web/index.html, web/sketch.js) を表示します。
-# 2. スペースキーを押している間の録音（Push-to-Talk）およびボタン録音を制御します。
-# 3. test.yomi の全単語リストをブラウザの「単語帳モーダル」に渡します。
-# 4. 認識された日本語テキストを解析して図形を追加・編集します。
-# ==============================================================================
 
 import copy
 import os
@@ -23,17 +14,13 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uvicorn
 
-# プロジェクトのルートフォルダのパス
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# 起動時に test.yomi / test.grammar を自動でコンパイルする
 from scripts.compile_grammar import compile_julius_grammar
 compile_julius_grammar(os.path.join(BASE_DIR, "asr", "grammar"), "test")
 
-# FastAPI アプリケーションの作成
 app = FastAPI()
 
-# ブラウザからの通信（CORS）を許可
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -42,20 +29,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ==============================================================================
-# 1. グローバル変数（図形履歴リスト・アンドゥ用スナップショット・録音プロセス管理）
-# ==============================================================================
 commands_history = []
 undo_stack = []
 
-# スペースキーを押している間の録音（Push-to-Talk）用の状態変数
 active_rec_proc: Optional[subprocess.Popen] = None
 active_rec_tmpdir: Optional[str] = None
 
 
-# ==============================================================================
-# 2. 位置・サイズ・色の計算ヘルパー関数
-# ==============================================================================
 def get_absolute_xy(text: str):
     """キャンバス全体（0.0〜1.0）に対する絶対座標 (x, y) を返す"""
     if "右上" in text:
@@ -98,7 +78,6 @@ def get_shape_half_extents(cmd: dict):
     orientation = cmd.get("orientation", "normal")
     rot = cmd.get("rotation", 0) % 180
 
-    # 90度回転している場合は縦と横の向きが入れ替わる
     if 45 <= rot <= 135:
         if orientation == "vertical":
             orientation = "horizontal"
@@ -106,13 +85,11 @@ def get_shape_half_extents(cmd: dict):
             orientation = "vertical"
 
     if shape == "line":
-        # 縦線は横幅0・縦幅 size、横線は横幅 size・縦幅0
         if orientation == "vertical":
             return 0.0, size / 2.0
         else:
             return size / 2.0, 0.0
 
-    # 縦長・横長・通常(1:1) に応じた横幅(w)と縦幅(h)の計算（すべての図形で共通：1:2 比率でハッキリ差をつける）
     if orientation == "vertical":
         w = size * 0.65
         h = size * 1.35
@@ -124,8 +101,6 @@ def get_shape_half_extents(cmd: dict):
         h = size
 
     if shape == "curve":
-        # 曲線は sketch.js で arc(0, -h*0.15, w, h*0.6, 0, PI) として描かれるため、
-        # 上端(両端)が y = -h*0.15、下端(底)が y = +h*0.15 の対称なバウンディングボックスになる
         return w / 2.0, h * 0.15
     else:
         return w / 2.0, h / 2.0
@@ -145,8 +120,6 @@ def get_relative_xy(text: str, prev_shape: dict, new_shape_dict: dict):
 
     is_touching = any(w in text for w in ["くっつけ", "接し", "接する", "ぴったり", "すぐ"])
 
-    # ★ 特別ルール：縦線の「すぐ下」に曲線（口など）を描く場合
-    # 曲線の「一番下の底（中点）」が縦線の下端にぴったり接するように配置する（ドラえもん等の口）
     if (
         prev_shape.get("shape") == "line"
         and new_shape_dict.get("shape") == "curve"
@@ -154,12 +127,8 @@ def get_relative_xy(text: str, prev_shape: dict, new_shape_dict: dict):
         and is_touching
     ):
         line_bottom_y = py + pry
-        # 曲線の底（中心から +nry の位置）が line_bottom_y に一致するように中心 y を設定
-        # （もし曲線の上端を線の下端に合わせるよりも、線の終点が曲線の真ん中に接する方が自然）
         return px, line_bottom_y - nry
 
-    # (A) 「その中」「その内側」の場合 → 直前の図形の内部に配置する
-    # ※ 注意：「真ん中」には「中」という文字が含まれるため、先に "真ん中" を除外して判定する！
     text_without_mannaka = text.replace("真ん中", "")
     if "中" in text_without_mannaka or "内側" in text:
         if is_touching:
@@ -188,7 +157,6 @@ def get_relative_xy(text: str, prev_shape: dict, new_shape_dict: dict):
         else:
             return px, py
 
-    # (B) 「その上」「その下」「その隣」「その右」などの外側配置
     gap = 0.0 if is_touching else 0.06
     dist_x = prx + nrx + gap
     dist_y = pry + nry + gap
@@ -243,18 +211,15 @@ def extract_shape_number(text: str, history: list):
 
     for keywords, num in number_words:
         if any(k in text for k in keywords):
-            # 1. まずステップ番号 (1., 2., 3...) と一致する図形を探す
             if 1 <= num <= len(history):
                 candidate = history[num - 1]
                 if candidate.get("action", "draw") == "draw" and candidate.get("shape"):
                     return candidate, num
-                # もし指定された番号が編集ステップだった場合は、その編集対象だった図形を返す
                 target_id = candidate.get("target_id")
                 if target_id:
                     for item in history:
                         if item.get("id") == target_id and item.get("shape"):
                             return item, num
-            # 2. 見つからなければ N 番目に描かれた図形を返す
             if 1 <= num <= len(actual_shapes):
                 return actual_shapes[num - 1], num
             else:
@@ -282,16 +247,12 @@ def extract_color(text: str):
     return None, False
 
 
-# ==============================================================================
-# 3. 音声認識テキストを解析して「新規追加」または「直前の図形の編集」を行う関数
-# ==============================================================================
 def process_voice_text(text: str, history: list):
     if not text or not text.strip():
         return False
 
     actual_shapes = get_actual_shapes(history)
 
-    # (1) 図形の種類（shape）が含まれているか調べる
     shape = None
     is_clone_shape = False
     if "楕円" in text:
@@ -310,23 +271,17 @@ def process_voice_text(text: str, history: list):
         shape = actual_shapes[-1].get("shape", "circle")
         is_clone_shape = True
 
-    # ==================================================
-    # ケースA：図形名がない場合 → 指定番号（または「それを」／直前）の図形を動かす・回転する
-    # ==================================================
     if shape is None:
         if not actual_shapes:
             return False
 
-        # 「二番を九十度回転して」なら2番の図形、「それを〜」や番号なしなら直前の図形を対象にする
         target_cmd, target_num = extract_shape_number(text, history)
         if target_cmd is None:
             return False
 
-        # 変更前のスナップショットを保存してから編集を適用する
         snapshot = copy.deepcopy(history)
         modified = False
 
-        # ① 回転命令（30度・45度・90度・180度に対応）
         if "回転" in text or "回して" in text or "度" in text:
             angle = 90
             if "三十度" in text or "30" in text:
@@ -344,7 +299,6 @@ def process_voice_text(text: str, history: list):
             target_cmd["rotation"] = (target_cmd.get("rotation", 0) + angle) % 360
             modified = True
 
-        # ② 移動命令（「横長」の「横」と混同しないよう、縦長・横長を除いたテキストで判定する）
         text_for_loc = text.replace("縦長", "").replace("横長", "")
         if "動かして" in text or "移動" in text or any(w in text_for_loc for w in ["上", "下", "左", "右", "真ん中", "中央", "隣", "内側"]):
             if "少し上" in text:
@@ -364,8 +318,6 @@ def process_voice_text(text: str, history: list):
                 target_cmd["x"], target_cmd["y"] = round(nx, 3), round(ny, 3)
             modified = True
 
-        # ③ サイズ変更命令（「めっちゃ大きくして」「小さくして」「半分にして」「半分くらいにして」など）
-        #    「くらい／ぐらい（APPROX）」がある場合は、固定値ではなく前後の範囲からランダムに選ぶ！
         is_extreme = any(w in text for w in ["めっちゃ", "すごく", "とても", "かなり", "超"])
         is_approx = ("くらい" in text) or ("ぐらい" in text)
         if "半分" in text:
@@ -390,7 +342,6 @@ def process_voice_text(text: str, history: list):
             target_cmd["size_ratio"] = max(0.04, round(target_cmd.get("size_ratio", 0.25) * scale, 3))
             modified = True
 
-        # ④ 縦長・横長の変更命令（「縦長にして」「横長にして」など）
         if "縦長" in text or "縦に長" in text or "縦の" in text:
             target_cmd["orientation"] = "vertical"
             modified = True
@@ -398,7 +349,6 @@ def process_voice_text(text: str, history: list):
             target_cmd["orientation"] = "horizontal"
             modified = True
 
-        # ⑤ 色・塗りつぶし変更命令
         col, has_col = extract_color(text)
         if has_col:
             target_cmd["color"] = col
@@ -409,7 +359,6 @@ def process_voice_text(text: str, history: list):
             modified = True
 
         if modified:
-            # 元の図形の下に入れるのではなく、独立した1つのコマンドステップとして履歴に追加する！
             undo_stack.append(snapshot)
             edit_step = {
                 "id": len(history) + 1,
@@ -421,13 +370,8 @@ def process_voice_text(text: str, history: list):
 
         return modified
 
-    # ==================================================
-    # ケースB：図形名がある場合 → 新しい図形を追加する
-    #          （「その〜」「前の〜」「一番の〜」「内側」「隣」「くっつけて」等の明示的な参照がある時だけ相対配置！）
-    # ==================================================
     ref_shape, ref_num = extract_shape_number(text, history)
 
-    # ※ 「真ん中」の「中」や「横長」の「横」で誤って前の図形を参照しないように除外してから判定する！
     text_clean_for_ref = text.replace("真ん中", "").replace("縦長", "").replace("横長", "").replace("横線", "")
     has_reference = (ref_num is not None) or any(
         w in text_clean_for_ref
@@ -436,22 +380,16 @@ def process_voice_text(text: str, history: list):
     is_same = ("同じ" in text) or is_clone_shape
     is_inside = ("内側" in text_clean_for_ref) or ("中" in text_clean_for_ref)
 
-    # (2) サイズ（size_ratio）を決定する
-    #     - 「めっちゃ」「すごく」がある場合は極端なサイズにする
-    #     - 「くらい／ぐらい（APPROX）」がある場合は、固定値ではなく一定範囲のランダムな数値にする！
     is_extreme = any(w in text for w in ["めっちゃ", "すごく", "とても", "かなり", "超"])
     is_approx = ("くらい" in text) or ("ぐらい" in text)
     prev_size = ref_shape.get("size_ratio", 0.25) if ref_shape else 0.25
 
     if is_same:
-        # 「同じ」はぴったり 1.0倍、「同じくらいの」は 0.85〜1.15倍のランダム
         size_ratio = round(prev_size * random.uniform(0.85, 1.15), 3) if is_approx else prev_size
     elif "半分" in text:
-        # 「半分の」はきっちり 0.50倍、「半分くらいの」は 0.40〜0.60倍のランダム
         factor = random.uniform(0.40, 0.60) if is_approx else 0.50
         size_ratio = round(prev_size * factor, 3)
     elif "普通" in text:
-        # 「普通の」はきっちり 0.25、「普通くらいの」は 0.20〜0.30 のランダム
         size_ratio = round(random.uniform(0.20, 0.30), 3) if is_approx else 0.25
     elif "大き" in text:
         if is_extreme:
@@ -472,7 +410,6 @@ def process_voice_text(text: str, history: list):
         else:
             size_ratio = 0.25
 
-    # (3) 色と塗りつぶし（filled）を決定する
     color, has_color = extract_color(text)
     if not has_color:
         if is_same and ref_shape is not None:
@@ -487,7 +424,6 @@ def process_voice_text(text: str, history: list):
     if "塗って" in text or "塗りつぶし" in text or "黒塗り" in text:
         filled = True
 
-    # (4) すべての図形の向き（縦長・横長・通常）と回転角度
     if "縦線" in text or "縦の" in text or "縦長" in text or "縦に長" in text or "縦" in text:
         orientation = "vertical"
     elif "横線" in text or "横の" in text or "横長" in text or "横に長" in text or "横" in text:
@@ -495,10 +431,8 @@ def process_voice_text(text: str, history: list):
     elif is_same and ref_shape is not None:
         orientation = ref_shape.get("orientation", "normal")
     elif shape in ("ellipse", "line"):
-        # 楕円と直線は、特に指定がなければ横向きをデフォルトにする
         orientation = "horizontal"
     else:
-        # 丸・四角・三角・カーブは、特に指定がなければ 1:1 の通常比率 ("normal") にする
         orientation = "normal"
 
     rotation = ref_shape.get("rotation", 0) if (is_same and ref_shape is not None) else 0
@@ -517,7 +451,6 @@ def process_voice_text(text: str, history: list):
         "text": text
     }
 
-    # (5) 位置（x, y）を決定する
     if has_reference and ref_shape is not None:
         x, y = get_relative_xy(text, ref_shape, new_command)
     else:
@@ -526,15 +459,11 @@ def process_voice_text(text: str, history: list):
     new_command["x"] = round(x, 3)
     new_command["y"] = round(y, 3)
 
-    # アンドゥ用に現在の状態を保存してから新しい図形ステップを追加する
     undo_stack.append(copy.deepcopy(history))
     history.append(new_command)
     return True
 
 
-# ==============================================================================
-# 4. 録音＆Julius音声認識の制御関数（Mac / Ubuntu / Windows マルチOS対応）
-# ==============================================================================
 def build_record_command(wav48_path: str) -> list:
     """
     OS（Mac / Ubuntu / Windows）に合わせて最適なマイク録音コマンドを自動で選択する。
@@ -544,11 +473,9 @@ def build_record_command(wav48_path: str) -> list:
     """
     sys_name = platform.system()
 
-    # 1. Windows の場合
     if sys_name == "Windows":
         return ["sox", "-q", "-t", "waveaudio", "default", "-r", "48000", "-c", "1", "-b", "16", wav48_path]
 
-    # 2. Ubuntu / Linux の場合（arecord が最も環境依存が少なく確実に動作する）
     if sys_name == "Linux":
         if shutil.which("arecord"):
             return ["arecord", "-q", "-f", "S16_LE", "-r", "48000", "-c", "1", wav48_path]
@@ -556,7 +483,6 @@ def build_record_command(wav48_path: str) -> list:
             return ["rec", "-q", "-r", "48000", "-c", "1", "-b", "16", wav48_path]
         return ["sox", "-q", "-d", "-r", "48000", "-c", "1", "-b", "16", wav48_path]
 
-    # 3. macOS の場合
     if shutil.which("rec"):
         return ["rec", "-q", "-r", "48000", "-c", "1", "-b", "16", wav48_path]
     return ["sox", "-q", "-d", "-r", "48000", "-c", "1", "-b", "16", wav48_path]
@@ -587,7 +513,6 @@ def run_julius_on_wav(wav48_path: str, tmpdir: str) -> Optional[str]:
     list_path = os.path.join(tmpdir, "list.txt")
     jconf_path = os.path.join("asr", "grammar.jconf")
 
-    # 録音前後に 0.25秒 の無音パッドを入れ、gain -n -3 でマイク音量を最適化する
     subprocess.run(
         ["sox", wav48_path, "-r", "16000", "-c", "1", "-b", "16", wav16_path, "gain", "-n", "-3", "pad", "0.25", "0.25"],
         cwd=BASE_DIR,
@@ -605,7 +530,6 @@ def run_julius_on_wav(wav48_path: str, tmpdir: str) -> Optional[str]:
         errors="replace"
     )
 
-    # sentence1: の行から認識結果を取り出す
     for line in j_res.stdout.splitlines():
         if line.startswith("sentence1:"):
             text = line.replace("sentence1:", "").replace("silB", "").replace("silE", "").replace(" ", "").strip()
@@ -626,13 +550,10 @@ def get_asr_result():
         )
         return result.stdout.strip()
     except Exception as e:
-        print(f"❌ 音声認識の実行エラー: {e}")
+        print(f"音声認識の実行エラー: {e}")
         return None
 
 
-# ==============================================================================
-# 5. test.yomi から全単語リストを読み取って単語帳データを返す関数
-# ==============================================================================
 CATEGORY_LABELS = {
     "REF_PRON": "指示語（その）",
     "TARGET_NOUN": "対象・番号の名詞（それ・前・一番〜十番）",
@@ -691,9 +612,6 @@ class TextCommandRequest(BaseModel):
     text: str
 
 
-# ==============================================================================
-# 6. Web 画面と API のルーティング設定
-# ==============================================================================
 @app.get("/")
 def serve_index():
     return FileResponse(os.path.join(BASE_DIR, "web", "index.html"))
@@ -715,7 +633,6 @@ def start_recording():
     """スペースキーを押した瞬間にマイク録音を開始する（Mac / Ubuntu / Windows 対応）"""
     global active_rec_proc, active_rec_tmpdir
 
-    # すでに録音中ならそのまま返す
     if active_rec_proc is not None and active_rec_proc.poll() is None:
         return {"status": "already_recording"}
 
@@ -723,7 +640,7 @@ def start_recording():
     wav48_path = os.path.join(active_rec_tmpdir, "input48.wav")
     rec_cmd = build_record_command(wav48_path)
 
-    print(f"🎙️ [Push-to-Talk] 録音開始 ({' '.join(rec_cmd[:2])})...")
+    print(f"[Push-to-Talk] 録音開始 ({' '.join(rec_cmd[:2])})...")
     active_rec_proc = subprocess.Popen(
         rec_cmd,
         cwd=BASE_DIR
@@ -745,10 +662,9 @@ def stop_recording():
     active_rec_tmpdir = None
 
     try:
-        # OSに合わせて録音プロセスを正常終了させ、WAVヘッダを書き込ませる
         stop_record_process(proc)
 
-        print("⏹️ [Push-to-Talk] 録音停止 → Julius で認識中...")
+        print("[Push-to-Talk] 録音停止 → Julius で認識中...")
         wav48_path = os.path.join(tmpdir, "input48.wav")
         text_result = None
         if os.path.exists(wav48_path) and os.path.getsize(wav48_path) > 1000:
@@ -765,7 +681,7 @@ def stop_recording():
 @app.post("/api/recognize")
 def recognize_speech():
     """ボタンクリック時（発話終了まで自動録音）"""
-    print("🎤 音声認識を開始します... (話し終わるまで録音中)")
+    print("音声認識を開始します... (話し終わるまで録音中)")
     text_result = get_asr_result()
     return register_command(text_result)
 
@@ -779,25 +695,25 @@ def register_command(text_result: Optional[str]):
     global commands_history
 
     if text_result:
-        print(f"👉 認識テキスト: '{text_result}'")
+        print(f"認識テキスト: '{text_result}'")
         ok = process_voice_text(text_result, commands_history)
 
         if ok:
-            print(f"🎨 現在の図形リスト (合計 {len(commands_history)} 個): {commands_history[-1]}")
+            print(f"現在の図形リスト (合計 {len(commands_history)} 個): {commands_history[-1]}")
             return {
                 "understood": True,
                 "text": text_result,
                 "commands": commands_history
             }
         else:
-            print("⚠️ 命令を解釈できませんでした。")
+            print("命令を解釈できませんでした。")
             return {
                 "understood": False,
                 "text": text_result,
                 "commands": commands_history
             }
     else:
-        print("⚠️ 音声テキストが取得できませんでした。")
+        print("音声テキストが取得できませんでした。")
         return {
             "understood": False,
             "text": "",
@@ -830,8 +746,5 @@ def reset_commands():
     return {"commands": commands_history}
 
 
-# ==============================================================================
-# 7. サーバーの起動
-# ==============================================================================
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

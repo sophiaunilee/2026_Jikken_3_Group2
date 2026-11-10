@@ -3,7 +3,6 @@ setlocal EnableExtensions
 chcp 65001 >nul
 cd /d "%~dp0" || goto :failed
 
-rem Check the required project files.
 if not exist "scripts\compile_grammar.py" (
     echo [ERROR] scripts\compile_grammar.py was not found.
     goto :failed
@@ -13,7 +12,6 @@ if not exist "app.py" (
     goto :failed
 )
 
-rem Find a working Python installation.
 set "PY_CMD=python"
 python -c "import sys" >nul 2>&1
 if errorlevel 1 (
@@ -25,7 +23,6 @@ if errorlevel 1 (
     set "PY_CMD=py -3"
 )
 
-rem Never erase an existing virtual environment automatically.
 if exist "venv" if not exist "venv\Scripts\python.exe" (
     echo [ERROR] The existing venv directory is not a Windows virtual environment.
     echo Rename the directory first, then run this script again.
@@ -38,7 +35,6 @@ if not exist "venv\Scripts\python.exe" (
     if errorlevel 1 goto :failed
 )
 
-rem Install required server packages if they are missing.
 "venv\Scripts\python.exe" -c "import fastapi, uvicorn, pydantic" >nul 2>&1
 if errorlevel 1 (
     echo Installing required Python packages...

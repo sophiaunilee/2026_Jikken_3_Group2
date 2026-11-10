@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Blindraw</title>
   <style>
-    /* ==========================================================
-     * ゲーム風UIスタイル設定
-     * ========================================================== */
     * {
       box-sizing: border-box;
     }
@@ -24,7 +21,6 @@
       overflow: hidden;
     }
 
-    /* 上部ヘッダー（ゲームタイトルと操作ボタン） */
     header {
       display: flex;
       align-items: center;
@@ -79,7 +75,6 @@
       font-size: 16px;
     }
 
-    /* ツールチップ（ボタンにカーソルを合わせたときに説明を表示） */
     .tooltip-btn {
       position: relative;
     }
@@ -108,7 +103,6 @@
       transform: translateY(0);
     }
 
-    /* 絵を公開した後にキャンバスの左上に表示される「もう一度隠す」ボタン */
     #rehide-btn {
       position: absolute;
       top: 22px;
@@ -127,7 +121,6 @@
       display: inline-block;
     }
 
-    /* メイン領域（左：正方形キャンバス ／ 右：ゲームログとガイド） */
     .workspace {
       display: flex;
       gap: 18px;
@@ -135,7 +128,6 @@
       min-height: 0;
     }
 
-    /* 左側：キャンバスステージ（完成ボタンを押すまで黒いカーテンで隠す） */
     #canvas-stage {
       flex: 1;
       background: #1e293b;
@@ -155,7 +147,6 @@
       border-radius: 12px;
     }
 
-    /* キャンバスを隠す黒いブラインドボックス（完成ボタンで開く） */
     #blind-cover {
       position: absolute;
       inset: 12px;
@@ -218,7 +209,6 @@
       box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
     }
 
-    /* 右側：ゲームコマンド履歴＆ガイドパネル */
     .sidebar {
       width: 420px;
       display: flex;
@@ -246,7 +236,6 @@
       justify-content: space-between;
     }
 
-    /* スペースキー案内バナー */
     .space-hint {
       background: rgba(245, 158, 11, 0.15);
       border: 1px solid rgba(245, 158, 11, 0.4);
@@ -267,7 +256,6 @@
       font-family: monospace;
     }
 
-    /* 認識結果メッセージ表示欄 */
     #status {
       font-size: 13px;
       font-weight: bold;
@@ -279,7 +267,6 @@
       line-height: 1.45;
     }
 
-    /* 番号付きコマンド履歴リスト (1., 2., 3. ...) */
     .history-panel {
       flex: 1;
       min-height: 0;
@@ -335,7 +322,6 @@
       margin-top: 2px;
     }
 
-    /* 文法ガイドのボックス */
     .formula {
       background: #0f172a;
       border: 1px solid #334155;
@@ -347,7 +333,6 @@
       line-height: 1.65;
     }
 
-    /* 全単語帳モーダル */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -442,12 +427,10 @@
     }
   </style>
 
-  <!-- p5.js ライブラリの読み込み -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
 </head>
 <body>
 
-  <!-- 上部バー：ゲームタイトルと最小限のすっきりした操作ボタン -->
   <header>
     <h1>🎨 Blindraw</h1>
     <div class="toolbar">
@@ -464,14 +447,11 @@
   </header>
 
   <div class="workspace">
-    <!-- 左側：p5.js の正方形キャンバス（完成ボタンを押すまで黒いボックスで隠れている） -->
     <div id="canvas-stage">
       <div id="canvas-holder"></div>
 
-      <!-- 絵を公開したあとに再び隠したいとき用の小ボタン -->
       <button id="rehide-btn" onclick="hideCanvas()">🙈 もう一度キャンバスを隠す</button>
 
-      <!-- キャンバスを隠す黒いブラインドカバー -->
       <div id="blind-cover">
         <div class="mystery-icon">🎨❓</div>
         <div class="blind-title">キャンバスは隠されています！</div>
@@ -485,9 +465,7 @@
       </div>
     </div>
 
-    <!-- 右側：ステータス・番号付きコマンド履歴・文法ガイド -->
     <aside class="sidebar">
-      <!-- 1. ステータス表示 -->
       <div class="panel">
         <h2>🎙️ 音声入力ステータス</h2>
         <div class="space-hint">
@@ -496,7 +474,6 @@
         <div id="status">待機中... スペースキーを長押ししながら話してください。</div>
       </div>
 
-      <!-- 2. 番号付きコマンド履歴リスト (1., 2., 3. ...) -->
       <div class="panel history-panel">
         <h2>
           <span>📜 あなたの描画コマンド履歴</span>
@@ -509,7 +486,6 @@
         </div>
       </div>
 
-      <!-- 3. 番号指定＆文法の組み立て方ガイド -->
       <div class="panel">
         <h2>
           <span>📐 コマンドの言い方ヒント</span>
@@ -530,9 +506,6 @@
     </aside>
   </div>
 
-  <!-- ==========================================================
-       📖 全単語帳モーダル（test.yomi の全単語をカテゴリ別に一覧表示）
-       ========================================================== -->
   <div id="vocabModal" class="modal-overlay" onclick="if(event.target===this) closeVocabModal()">
     <div class="modal-card">
       <div class="modal-header">
@@ -545,7 +518,6 @@
     </div>
   </div>
 
-  <!-- p5.js の描画スクリプト（キャッシュ防止パラメータ付き） -->
   <script src="sketch.js?v=7"></script>
 </body>
 </html>

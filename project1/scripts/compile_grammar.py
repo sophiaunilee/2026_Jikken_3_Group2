@@ -1,20 +1,8 @@
 #!/usr/bin/env python3
-# ==============================================================================
-# Julius 文法コンパイラ (compile_grammar.py)
-#
-# 【役割】
-# asr/grammar/test.yomi と asr/grammar/test.grammar を読み込み、
-# Julius が音声認識に使用する以下の4つのファイルを自動生成します：
-#   1. test.voca (単語とローマ字音素の対応ファイル)
-#   2. test.term (カテゴリ番号とカテゴリ名の対応ファイル)
-#   3. test.dict (Julius 用の発音辞書ファイル)
-#   4. test.dfa  (文法のオートマトン状態遷移ファイル)
-# ==============================================================================
 
 import os
 from collections import deque
 
-# 1. ひらがな → Julius音素（ローマ字）変換テーブル
 DIGRAPHS = {
     "きゃ": "ky a", "きゅ": "ky u", "きょ": "ky o",
     "しゃ": "sh a", "しゅ": "sh u", "しぇ": "sh e", "しょ": "sh o",
@@ -74,8 +62,6 @@ def yomi_to_phonemes(yomi: str) -> str:
             tokens.append(yomi[i])
             i += 1
 
-    # 長音（おう->o:, えい->e:, おお->o: など）の処理
-    # ※ ただし「おおきい(o: k i i)」「ちいさい(ch i: s a i)」などの語末の「い」は「i」のままにする
     flat = " ".join(tokens).split()
     merged = []
     for idx, p in enumerate(flat):
@@ -103,8 +89,7 @@ def compile_julius_grammar(grammar_dir: str, prefix: str = "test"):
     dict_path = os.path.join(grammar_dir, f"{prefix}.dict")
     dfa_path = os.path.join(grammar_dir, f"{prefix}.dfa")
 
-    # 1. test.yomi を読み込んでカテゴリと単語リストを取得
-    categories = []  # [(cat_name, [(word, phonemes), ...]), ...]
+    categories = []  
     current_cat = None
 
     with open(yomi_path, "r", encoding="utf-8") as f:
@@ -123,7 +108,6 @@ def compile_julius_grammar(grammar_dir: str, prefix: str = "test"):
                     phonemes = yomi_to_phonemes(yomi)
                     current_cat[1].append((word, phonemes))
 
-    # 2. test.voca, test.term, test.dict を書き出す
     term_id_map = {}
     with open(voca_path, "w", encoding="utf-8") as fvoca, \
          open(term_path, "w", encoding="utf-8") as fterm, \
@@ -136,7 +120,6 @@ def compile_julius_grammar(grammar_dir: str, prefix: str = "test"):
                 fvoca.write(f"{word}\t{phonemes}\n")
                 fdict.write(f"{tid}\t[{word}]\t{phonemes}\n")
 
-    # 3. test.grammar を読み込んですべての文パターンを展開し、逆向きDFA（Julius仕様）を構築
     rules = {}
     with open(gram_path, "r", encoding="utf-8") as f:
         for line in f:
@@ -148,7 +131,6 @@ def compile_julius_grammar(grammar_dir: str, prefix: str = "test"):
             rhs_syms = rhs.strip().split()
             rules.setdefault(lhs, []).append(rhs_syms)
 
-    # 非終端記号を再帰展開して、終端記号（カテゴリ名）の列をすべて生成
     def expand(sym):
         if sym in term_id_map:
             return [[term_id_map[sym]]]
@@ -163,8 +145,6 @@ def compile_julius_grammar(grammar_dir: str, prefix: str = "test"):
 
     sentences = expand("S")
 
-    # Julius の .dfa は文末(NS_E)から文頭(NS_B)へ逆向きに遷移する決定性有限オートマトン(DFA)
-    # まず逆向き列のトライ木(Trie)を作り、最小化(または合流)して出力する
     trie_transitions = {0: {}}
     accepting_states = set()
     next_state_id = 1
@@ -180,7 +160,6 @@ def compile_julius_grammar(grammar_dir: str, prefix: str = "test"):
             state = trie_transitions[state][tid]
         accepting_states.add(state)
 
-    # 同一の後続遷移を持つ状態をマージしてDFAを最小化
     state_map = {}
     changed = True
     while changed:
@@ -203,7 +182,6 @@ def compile_julius_grammar(grammar_dir: str, prefix: str = "test"):
             rep = state_map.get(s, s)
             state_map[s] = new_map.get(rep, rep)
 
-    # 状態番号を 0 から連番に振り直す (BFS順)
     remap = {state_map.get(0, 0): 0}
     queue = deque([state_map.get(0, 0)])
     ordered_reps = []
@@ -216,7 +194,6 @@ def compile_julius_grammar(grammar_dir: str, prefix: str = "test"):
                 remap[dst_rep] = len(remap)
                 queue.append(dst_rep)
 
-    # 4. test.dfa を書き出す
     with open(dfa_path, "w", encoding="utf-8") as fdfa:
         for rep in ordered_reps:
             sid = remap[rep]
@@ -228,7 +205,7 @@ def compile_julius_grammar(grammar_dir: str, prefix: str = "test"):
             if rep in accepting_states:
                 fdfa.write(f"{sid} -1 -1 1 0\n")
 
-    print(f"✅ 文法コンパイル完了: {len(categories)} カテゴリ, {len(sentences)} 文パターン, {len(ordered_reps)} DFA状態")
+    print(f"文法コンパイル完了: {len(categories)} カテゴリ, {len(sentences)} 文パターン, {len(ordered_reps)} DFA状態")
 
 
 if __name__ == "__main__":

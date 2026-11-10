@@ -1,0 +1,6 @@
+#!/home/denjo/Downloads/2026_Jikken_3_Group2-main_comments_removed/2026_Jikken_3_Group2-main/project1/venv/bin/python3
+import sys
+from idna.cli import main
+if __name__ == '__main__':
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
+    sys.exit(main())
